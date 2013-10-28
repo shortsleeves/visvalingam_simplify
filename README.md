@@ -1,6 +1,10 @@
 C++ implementation of: _Line Generalisation by Repeated Elimination
 of the Smallest Area_ ("Visvalingam's algorithm"), http://www2.dcs.hull.ac.uk/CISRG/publications/DPs/DP10/DP10.html
 
+## Example usage
+    make
+    bin/simplify --file data/ne_10m_admin_0_countries.shp
+
 ## Sample data
 Source data used: Natural Earth Data: http://www.naturalearthdata.com/downloads/10m-cultural-vectors/
 
