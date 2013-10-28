@@ -6,11 +6,11 @@ Source data used: Natural Earth Data: http://www.naturalearthdata.com/downloads/
 
 ### USA
 number of points: 9119
-images/ne_10m_usa.png
+![USA 10m](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_usa.png)
 
 ### Simplified USA
 number of points: 1518
-images/ne_10m_usa_simplified.png
+![USA 10m](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_usa_simplified.png)
 
 ## External Dependencies:
 * boost, for unordered_map
