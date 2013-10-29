@@ -10,11 +10,21 @@ Source data used: Natural Earth Data: http://www.naturalearthdata.com/downloads/
 
 ### USA
 number of points: 9119
-![USA 10m](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_usa.png)
+![USA 10m_1](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_usa.png)
 
 ### Simplified USA
 number of points: 1518
-![USA 10m](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_usa_simplified.png)
+![USA 10m_2](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_usa_simplified.png)
+
+### South of France
+![SouthFrance_1](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_south_france.png)
+
+### Simplified South of France
+Same input data, same simplification thresholds as USA above.
+![SouthFrance_2](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_south_france_simplified.png)
+
+### Overlaid South of France
+![SouthFrance_3](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_south_france_overlaid.png)
 
 ## External Dependencies:
 * boost, for unordered_map
