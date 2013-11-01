@@ -254,7 +254,7 @@ int main(int argc, char **argv)
             OGRLayer* layer = datasource->GetLayer(i);
             assert(layer);
             layer->ResetReading();
-            layer->SetAttributeFilter("NAME LIKE \'UNITED STATES%\'");
+            layer->SetAttributeFilter("NAME LIKE 'united states%'");
 
             OGRFeature* feat;
             while ((feat = layer->GetNextFeature()) != NULL)
