@@ -1,5 +1,4 @@
-C++ implementation of: _Line Generalisation by Repeated Elimination
-of the Smallest Area_ ("Visvalingam's algorithm"), http://www2.dcs.hull.ac.uk/CISRG/publications/DPs/DP10/DP10.html
+C++ implementation of: _Line Generalisation by Repeated Elimination of the Smallest Area_ ("Visvalingam's algorithm"), http://www2.dcs.hull.ac.uk/CISRG/publications/DPs/DP10/DP10.html
 
 ## Example usage
     make
@@ -26,8 +25,8 @@ Same input data, same simplification thresholds as USA above.
 ### Overlaid South of France
 ![SouthFrance_3](https://github.com/shortsleeves/visvalingam_simplify/raw/master/images/ne_10m_south_france_overlaid.png)
 
-## External Dependencies:
-* boost, for unordered_map
+## Dependencies:
+* C++ compiler that supports -std=c++11 (for unordered_map)
 * gdal OGR, for file format support
 
 ## License

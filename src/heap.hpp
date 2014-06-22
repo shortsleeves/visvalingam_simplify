@@ -8,7 +8,7 @@
 #include <cassert>
 #include <algorithm>
 #include <functional>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <iostream>
 
 #define CHECK_HEAP_CONSISTENCY 0
@@ -26,7 +26,7 @@ template <typename T, typename Comparator = std::less<T> >
 class Heap
 {
 public:
-    typedef boost::unordered_map<T, size_t> NodeToHeapIndexMap;
+    typedef std::unordered_map<T, size_t> NodeToHeapIndexMap;
 
     Heap(size_t fixed_size)
     :
