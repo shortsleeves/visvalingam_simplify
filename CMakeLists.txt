@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 project(visvalingam)
+enable_testing()
 
 # Enable C++11
 set(CMAKE_CXX_STANDARD 11)
@@ -20,3 +21,6 @@ target_include_directories(visvalingam_algorithm PUBLIC src ${GDAL_INCLUDE_DIR})
 add_executable(simplify src/main.cpp)
 target_link_libraries(simplify visvalingam_algorithm)
 
+add_executable(test_visvalingam src/test_visvalingam.cpp)
+target_link_libraries(test_visvalingam visvalingam_algorithm)
+add_test(NAME test_visvalingam COMMAND test_visvalingam)
