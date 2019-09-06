@@ -5,9 +5,11 @@
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <ogrsf_frmts.h>
 #include "visvalingam_algorithm.h"
 #include "ogr.h"
+#include "csv.h"
 #include "heap.hpp"
 
 static void print_wkt(const OGRMultiPolygon& ogr_multi_poly)
@@ -47,8 +49,10 @@ static void run_visvalingam(const MultiPolygon& shape)
     print_wkt(ogr_multipolygon);
 }
 
-int load_ogr(MultiPolygon *multi_poly, const char *filename, bool print_source)
+int process_ogr(const char *filename, bool print_source)
 {
+    MultiPolygon multi_poly;
+
     // Parse shape files via OGR: http://gdal.org/ogr/index.html
     OGRRegisterAll();
 
@@ -88,7 +92,8 @@ int load_ogr(MultiPolygon *multi_poly, const char *filename, bool print_source)
                     std::cout << std::endl;
                 }
 
-                from_ogr_shape(*ogr_multi_poly, multi_poly);
+                from_ogr_shape(*ogr_multi_poly, &multi_poly);
+                run_visvalingam(multi_poly);
                 break;
             }
 
@@ -103,9 +108,36 @@ int load_ogr(MultiPolygon *multi_poly, const char *filename, bool print_source)
     OGRDataSource::DestroyDataSource(datasource);
 }
 
-int load_csv(MultiPolygon *multi_poly, const char *filename, bool print_source)
+int process_csv(const char *filename, bool print_source)
 {
+    Linestring shape;
+    Linestring shape_simplified;
+    std::ifstream is(filename);
 
+    if (!is.is_open()) {
+        return 1;
+    }
+
+    CSVIterator iter(is);
+    while(iter != CSVIterator()) {
+        double x = std::stod((*iter)[0]);
+        double y = std::stod((*iter)[1]);
+        double z = std::stod((*iter)[2]);
+        shape.push_back(Point(x, y, z));
+        iter++;
+    }
+
+    std::cout << "original shape:   " << shape.size() << " points" << std::endl;
+    Visvalingam_Algorithm vis_algo(shape);
+    vis_algo.simplify(0.2, &shape_simplified);
+    std::cout << "simplified shape: " << shape_simplified.size() << " points" << std::endl;
+
+    std::ofstream os(std::string(filename) + ".out");
+    for (const Point &p : shape_simplified) {
+        os << p.X << "," << p.Y << "," << p.Z << "\n";
+    }
+
+    return 0;
 }
 
 enum InputFormat {
@@ -151,15 +183,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    MultiPolygon multi_poly;
-
     switch(file_format)
     {
     case FORMAT_OGR:
-        res = load_ogr(&multi_poly, filename, print_source);
+        res = process_ogr(filename, print_source);
         break;
     case FORMAT_CSV:
-        //res = load_csv(filename);
+        res = process_csv(filename, print_source);
         break;
     }
 
@@ -168,8 +198,6 @@ int main(int argc, char **argv)
         std::cout << "error: input file loading failed" << std::endl;
         return res;
     }
-
-    run_visvalingam(multi_poly);
 
     return res;
 }
