@@ -1,8 +1,27 @@
 #include <iostream>
+#include <sstream>
 #include <cassert>
 #include "polyline.h"
 #include "heap.hpp"
 #include "visvalingam_algorithm.h"
+#include "csv.h"
+
+void test_read_csv()
+{
+    std::string csv_text = "1,2,3,42,5\n"
+                           "0,2,4,42,8\n"
+                           "1,3,5,42,9\n";
+    std::istringstream ss(csv_text);
+    CSVIterator iter(ss);
+
+    int nb_lines = 0;
+    while(iter != CSVIterator()) {
+        assert(stoi((*iter)[3]) == 42);
+        ++iter;
+        nb_lines++;
+    }
+    assert(nb_lines == 3);
+}
 
 void test_vector_sub()
 {
@@ -140,6 +159,7 @@ bool unit_tests()
 {
     try
     {
+        test_read_csv();
         test_vector_sub();
         test_cross_product();
         test_heap_sort();

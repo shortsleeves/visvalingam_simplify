@@ -47,11 +47,78 @@ static void run_visvalingam(const MultiPolygon& shape)
     print_wkt(ogr_multipolygon);
 }
 
+int load_ogr(MultiPolygon *multi_poly, const char *filename, bool print_source)
+{
+    // Parse shape files via OGR: http://gdal.org/ogr/index.html
+    OGRRegisterAll();
+
+    OGRDataSource* datasource = OGRSFDriverRegistrar::Open(filename, FALSE);
+    if (datasource == NULL)
+    {
+        std::cerr << "Open failed for file: " << filename << std::endl;
+        return 1;
+    }
+
+    size_t layer_count = datasource->GetLayerCount();
+    for (size_t i=0; i < layer_count; ++i)
+    {
+        OGRLayer* layer = datasource->GetLayer(i);
+        assert(layer);
+        layer->ResetReading();
+        layer->SetAttributeFilter("NAME LIKE 'united states%'");
+
+        OGRFeature* feat;
+        while ((feat = layer->GetNextFeature()) != NULL)
+        {
+            OGRGeometry* geometry = feat->GetGeometryRef();
+            if (geometry == NULL)
+            {
+                continue;
+            }
+            switch (geometry->getGeometryType())
+            {
+            case wkbMultiPolygon:
+            {
+                OGRMultiPolygon* ogr_multi_poly = (OGRMultiPolygon*)geometry;
+
+                if (print_source)
+                {
+                    std::cout << "SOURCE DATA: " << std::endl;
+                    print_wkt(*ogr_multi_poly);
+                    std::cout << std::endl;
+                }
+
+                from_ogr_shape(*ogr_multi_poly, multi_poly);
+                break;
+            }
+
+            default:
+            {
+                break;
+            }
+            }
+            OGRFeature::DestroyFeature(feat);
+        }
+    }
+    OGRDataSource::DestroyDataSource(datasource);
+}
+
+int load_csv(MultiPolygon *multi_poly, const char *filename, bool print_source)
+{
+
+}
+
+enum InputFormat {
+    FORMAT_OGR,
+    FORMAT_CSV,
+};
 
 int main(int argc, char **argv)
 {
     bool print_source = false;
     const char* filename = NULL;
+    InputFormat file_format = FORMAT_OGR;
+    int res = 0;
     for (int i=1; i < argc; ++i)
     {
         if (strcmp(argv[i], "--file") == 0 && (i+1) < argc)
@@ -63,65 +130,46 @@ int main(int argc, char **argv)
         {
             print_source = true;
         }
-    }
-
-    if (filename != NULL)
-    {
-        // Parse shape files via OGR: http://gdal.org/ogr/index.html
-        OGRRegisterAll();
-
-        OGRDataSource* datasource = OGRSFDriverRegistrar::Open(filename, FALSE);
-        if (datasource == NULL)
+        else if (strcmp(argv[i], "--format=ogr") == 0)
         {
-            std::cerr << "Open failed for file: " << filename << std::endl;
+            file_format = FORMAT_OGR;
+        }
+        else if (strcmp(argv[i], "--format=csv") == 0)
+        {
+            file_format = FORMAT_CSV;
+        }
+        else
+        {
+            std::cout << "unkown argument: " << argv[i] << std::endl;
             return 1;
         }
-
-        size_t layer_count = datasource->GetLayerCount();
-        for (size_t i=0; i < layer_count; ++i)
-        {
-            OGRLayer* layer = datasource->GetLayer(i);
-            assert(layer);
-            layer->ResetReading();
-            layer->SetAttributeFilter("NAME LIKE 'united states%'");
-
-            OGRFeature* feat;
-            while ((feat = layer->GetNextFeature()) != NULL)
-            {
-                OGRGeometry* geometry = feat->GetGeometryRef();
-                if (geometry == NULL)
-                {
-                    continue;
-                }
-                switch (geometry->getGeometryType())
-                {
-                case wkbMultiPolygon:
-                {
-                    OGRMultiPolygon* ogr_multi_poly = (OGRMultiPolygon*)geometry;
-
-                    if (print_source)
-                    {
-                        std::cout << "SOURCE DATA: " << std::endl;
-                        print_wkt(*ogr_multi_poly);
-                        std::cout << std::endl;
-                    }
-
-                    MultiPolygon multi_poly;
-                    from_ogr_shape(*ogr_multi_poly, &multi_poly);
-
-                    run_visvalingam(multi_poly);
-                    break;
-                }
-
-                default:
-                {
-                    break;
-                }
-                }
-                OGRFeature::DestroyFeature(feat);
-            }
-        }
-        OGRDataSource::DestroyDataSource(datasource);
     }
-	return 0;
+
+    if (!filename)
+    {
+        std::cout << "error: input file required" << std::endl;
+        return 1;
+    }
+
+    MultiPolygon multi_poly;
+
+    switch(file_format)
+    {
+    case FORMAT_OGR:
+        res = load_ogr(&multi_poly, filename, print_source);
+        break;
+    case FORMAT_CSV:
+        //res = load_csv(filename);
+        break;
+    }
+
+    if (res != 0)
+    {
+        std::cout << "error: input file loading failed" << std::endl;
+        return res;
+    }
+
+    run_visvalingam(multi_poly);
+
+    return res;
 }

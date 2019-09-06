@@ -12,8 +12,13 @@ find_package(GDAL REQUIRED)
 
 add_library(visvalingam_algorithm
   src/ogr.cpp
+  src/ogr.h
+  src/csv.cpp
+  src/csv.h
   src/polyline.cpp
+  src/polyline.h
   src/visvalingam_algorithm.cpp
+  src/visvalingam_algorithm.h
 )
 target_link_libraries(visvalingam_algorithm PUBLIC ${GDAL_LIBRARY})
 target_include_directories(visvalingam_algorithm PUBLIC src ${GDAL_INCLUDE_DIR})
