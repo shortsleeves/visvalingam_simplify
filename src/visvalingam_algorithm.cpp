@@ -48,8 +48,8 @@ static double effective_area(VertexIndex current, VertexIndex previous,
     const Point& n = input_line[next];
     const Point c_n = vector_sub(n, c);
     const Point c_p = vector_sub(p, c);
-    const double det = cross_product(c_n, c_p);
-    return 0.5 * fabs(det);
+    const double norm = cross_product_norm(c_n, c_p);
+    return 0.5 * norm;
 }
 
 static double effective_area(const VertexNode& node,

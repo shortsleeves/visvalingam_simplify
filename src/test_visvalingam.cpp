@@ -35,7 +35,7 @@ void test_vector_sub()
     assert(res.Y == 19);
 }
 
-void test_cross_product()
+void test_cross_product_norm()
 {
     Point a, b, c;
     a.X = 10;
@@ -45,11 +45,11 @@ void test_cross_product()
     c.X = -100;
     c.Y = 8;
 
-    double res1 = cross_product(a,b);
-    double res2 = cross_product(b,a);
-    double res3 = cross_product(a,c);
+    double res1 = cross_product_norm(a,b);
+    double res2 = cross_product_norm(b,a);
+    double res3 = cross_product_norm(a,c);
     assert(res1 == 34);
-    assert(res2 == -34);
+    assert(res2 == 34);
     assert(res3 == 880);
 }
 
@@ -161,7 +161,7 @@ bool unit_tests()
     {
         test_read_csv();
         test_vector_sub();
-        test_cross_product();
+        test_cross_product_norm();
         test_heap_sort();
         test_heap_insert_remove_mix();
         test_heap_reheap();
