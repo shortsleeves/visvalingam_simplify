@@ -8,7 +8,7 @@
 #include <iostream>
 #include <ogrsf_frmts.h>
 #include "visvalingam_algorithm.h"
-#include "geo_types.h"
+#include "ogr.h"
 #include "heap.hpp"
 
 void test_vector_sub()

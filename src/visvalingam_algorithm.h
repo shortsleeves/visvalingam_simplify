@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <cassert>
-#include "geo_types.h"
+#include "polyline.h"
 
 class Visvalingam_Algorithm
 {

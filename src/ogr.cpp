@@ -2,7 +2,7 @@
 //
 // 2013 (c) Mathieu Courtemanche
 //
-#include "geo_types.h"
+#include "polyline.h"
 #include <ogr_geometry.h>
 #include <cassert>
 #include <sstream>
@@ -91,18 +91,5 @@ void to_ogr_shape(const MultiPolygon& shape, OGRMultiPolygon* ogr_shape)
         ogr_shape->addGeometry(&ogr_polygon);
     }
     ogr_shape->closeRings();
-}
-
-double cross_product(const Point& v1, const Point& v2)
-{
-    return (v1.X * v2.Y) - (v1.Y * v2.X);
-}
-
-Point vector_sub(const Point& A, const Point& B)
-{
-    Point res;
-    res.X = A.X - B.X;
-    res.Y = A.Y - B.Y;
-    return res;
 }
 
