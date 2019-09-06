@@ -16,7 +16,7 @@ public:
 
     void simplify(double area_threshold, Linestring* res) const;
 
-    void print_areas() const;
+    void print_areas(std::ostream &stream) const;
 
 private:
     bool contains_vertex(VertexIndex vertex_index, double area_threshold) const;

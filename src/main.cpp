@@ -132,10 +132,13 @@ int process_csv(const char *filename, bool print_source)
     vis_algo.simplify(0.2, &shape_simplified);
     std::cout << "simplified shape: " << shape_simplified.size() << " points" << std::endl;
 
-    std::ofstream os(std::string(filename) + ".out");
+    std::ofstream os_pts(std::string(filename) + ".out");
     for (const Point &p : shape_simplified) {
-        os << p.X << "," << p.Y << "," << p.Z << "\n";
+        os_pts << p.X << "," << p.Y << "," << p.Z << "\n";
     }
+
+    std::ofstream os_areas(std::string(filename) + ".areas");
+    vis_algo.print_areas(os_areas);
 
     return 0;
 }

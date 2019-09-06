@@ -129,11 +129,11 @@ void Visvalingam_Algorithm::simplify(double area_threshold,
     }
 }
 
-void Visvalingam_Algorithm::print_areas() const
+void Visvalingam_Algorithm::print_areas(std::ostream &stream) const
 {
     for (VertexIndex i=0; i < m_effective_areas.size(); ++i)
     {
-        std::cout << i << ": " << m_effective_areas[i] << std::endl;
+        stream << i << ": " << m_effective_areas[i] << "\n";
     }
 }
 
