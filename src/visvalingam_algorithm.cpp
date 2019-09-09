@@ -137,19 +137,15 @@ void Visvalingam_Algorithm::simplify(double area_threshold,
 }
 
 
-void Visvalingam_Algorithm::simplify_ratio(size_t ratio,
-                                    Linestring* res) const
+double Visvalingam_Algorithm::area_threshold_for_ratio(size_t ratio) const
 {
-    assert(res);
     // sort by area
     std::vector<double> ordered_area(m_effective_areas);
     std::sort(ordered_area.begin(), ordered_area.end());
     size_t idx = m_effective_areas.size() * ratio / 100;
     assert(idx >= 0);
     assert(idx < ordered_area.size());
-    double threshold = ordered_area[idx];
-    std::cout << "area threshold: " << threshold << std::endl;
-    simplify(threshold, res);
+    return ordered_area[idx];
 }
 
 void Visvalingam_Algorithm::print_areas(std::ostream &stream) const

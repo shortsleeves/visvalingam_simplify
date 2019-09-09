@@ -15,7 +15,7 @@ public:
     Visvalingam_Algorithm(const Linestring& input);
 
     void simplify(double area_threshold, Linestring* res) const;
-    void simplify_ratio(size_t ratio, Linestring* res) const;
+    double area_threshold_for_ratio(size_t ratio) const;
 
     void print_areas(std::ostream &stream) const;
 

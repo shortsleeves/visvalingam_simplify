@@ -44,9 +44,12 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
         line++;
     }
 
-    std::cout << "original shape:   " << shape.size() << " points" << std::endl;
     Visvalingam_Algorithm vis_algo(shape);
-    vis_algo.simplify_ratio(ratio, &shape_simplified);
+    double threshold = vis_algo.area_threshold_for_ratio(ratio);
+    vis_algo.simplify(threshold, &shape_simplified);
+
+    std::cout << "area threshold:   " << threshold << std::endl;
+    std::cout << "original shape:   " << shape.size() << " points" << std::endl;
     std::cout << "simplified shape: " << shape_simplified.size() << " points" << std::endl;
 
     std::ofstream os_pts(std::string(filename) + ".out");
