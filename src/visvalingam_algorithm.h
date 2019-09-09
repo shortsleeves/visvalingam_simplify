@@ -41,5 +41,7 @@ Visvalingam_Algorithm::contains_vertex(VertexIndex vertex_index,
 }
 
 double effective_area(const Point& c, const Point& p, const Point &n);
+void run_visvalingam(const Linestring& shape, Linestring* res);
+void run_visvalingam(const MultiPolygon& shape, MultiPolygon& res);
 
 #endif // VISVALINGAM_ALGORITHM_H

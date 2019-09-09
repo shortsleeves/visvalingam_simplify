@@ -24,4 +24,7 @@ void to_ogr_shape(const Point& shape, OGRPoint* ogr_shape);
 void to_ogr_shape(const Linestring& shape, OGRLinearRing* ogr_shape);
 void to_ogr_shape(const MultiPolygon& shape, OGRMultiPolygon* ogr_shape);
 
+void print_wkt(const OGRMultiPolygon& ogr_multi_poly);
+int process_ogr(const char *filename, bool print_source);
+
 #endif // OGR_H

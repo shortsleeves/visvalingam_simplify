@@ -2,10 +2,16 @@
 //
 // 2013 (c) Mathieu Courtemanche
 //
-#include "polyline.h"
-#include <ogr_geometry.h>
+
+#include <iostream>
+#include "ogr.h"
+
+#ifdef HAVE_GDAL
 #include <cassert>
 #include <sstream>
+#include <ogr_geometry.h>
+#include <ogrsf_frmts.h>
+#include <visvalingam_algorithm.h>
 
 void from_ogr_shape(const OGRPoint& ogr_shape, Point* res)
 {
@@ -92,4 +98,101 @@ void to_ogr_shape(const MultiPolygon& shape, OGRMultiPolygon* ogr_shape)
     }
     ogr_shape->closeRings();
 }
+
+void print_wkt(const OGRMultiPolygon &ogr_multi_poly)
+{
+    char* wkt_text = NULL;
+    ogr_multi_poly.exportToWkt(&wkt_text);
+    std::cout << std::endl << wkt_text << std::endl;
+    OGRFree(wkt_text);
+}
+
+int process_ogr(const char *filename, bool print_source)
+{
+    MultiPolygon multi_poly;
+
+    // Parse shape files via OGR: http://gdal.org/ogr/index.html
+    OGRRegisterAll();
+
+    OGRDataSource* datasource = OGRSFDriverRegistrar::Open(filename, FALSE);
+    if (datasource == NULL)
+    {
+        std::cerr << "Open failed for file: " << filename << std::endl;
+        return 1;
+    }
+
+    size_t layer_count = datasource->GetLayerCount();
+    for (size_t i=0; i < layer_count; ++i)
+    {
+        OGRLayer* layer = datasource->GetLayer(i);
+        assert(layer);
+        layer->ResetReading();
+        layer->SetAttributeFilter("NAME LIKE 'united states%'");
+
+        OGRFeature* feat;
+        while ((feat = layer->GetNextFeature()) != NULL)
+        {
+            OGRGeometry* geometry = feat->GetGeometryRef();
+            if (geometry == NULL)
+            {
+                continue;
+            }
+            switch (geometry->getGeometryType())
+            {
+            case wkbMultiPolygon:
+            {
+                OGRMultiPolygon* ogr_multi_poly = (OGRMultiPolygon*)geometry;
+
+                if (print_source)
+                {
+                    std::cout << "SOURCE DATA: " << std::endl;
+                    print_wkt(*ogr_multi_poly);
+                    std::cout << std::endl;
+                }
+
+                from_ogr_shape(*ogr_multi_poly, &multi_poly);
+
+
+                MultiPolygon res;
+                run_visvalingam(multi_poly, res);
+
+                // convert back to OGR shape
+                OGRMultiPolygon ogr_multipolygon;
+                to_ogr_shape(res, &ogr_multipolygon);
+                std::cout << "SIMPLIFIED SHAPE: " << std::endl;
+                print_wkt(ogr_multipolygon);
+
+                break;
+            }
+
+            default:
+            {
+                break;
+            }
+            }
+            OGRFeature::DestroyFeature(feat);
+        }
+    }
+    OGRDataSource::DestroyDataSource(datasource);
+}
+
+#else
+
+void from_ogr_shape(const OGRPoint& ogr_shape, Point* res) { }
+void from_ogr_shape(const OGRLineString& ogr_shape, Linestring* res) { }
+void from_ogr_shape(const OGRPolygon& ogr_shape, Polygon* res) { }
+void from_ogr_shape(const OGRMultiPolygon& ogr_shape, MultiPolygon* res) { }
+
+void to_ogr_shape(const Point& shape, OGRPoint* ogr_shape) { }
+void to_ogr_shape(const Linestring& shape, OGRLinearRing* ogr_shape) { }
+void to_ogr_shape(const MultiPolygon& shape, OGRMultiPolygon* ogr_shape) {}
+
+void print_wkt(const OGRMultiPolygon& ogr_multi_poly) { }
+int process_ogr(const char *filename, bool print_source)
+{
+    std::cerr << "error: utility was compiled without OGR file format support. Recompile with GDAL." << std::endl;
+    return -1;
+}
+
+#endif
 

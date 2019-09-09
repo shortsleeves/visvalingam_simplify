@@ -162,3 +162,24 @@ void Visvalingam_Algorithm::print_areas(std::ostream &stream) const
     }
 }
 
+void run_visvalingam(const Linestring &shape, Linestring *res)
+{
+    Visvalingam_Algorithm vis_algo(shape);
+    Linestring simplified_linestring;
+    vis_algo.simplify(0.002, res);
+}
+
+void run_visvalingam(const MultiPolygon &shape, MultiPolygon &res)
+{
+    for (size_t i = 0; i < shape.size(); ++i)
+    {
+        const Polygon& poly = shape[i];
+        res.push_back(Polygon());
+        run_visvalingam(poly.exterior_ring, &res.back().exterior_ring);
+        for (size_t j = 0; j < poly.interior_rings.size(); ++j)
+        {
+            res.back().interior_rings.push_back(Linestring());
+            run_visvalingam(poly.interior_rings[j], &res.back().interior_rings.back());
+        }
+    }
+}
