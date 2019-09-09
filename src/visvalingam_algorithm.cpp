@@ -46,9 +46,7 @@ double effective_area(const Point& c, const Point& p, const Point &n)
     const Point c_n = vector_sub(n, c);
     const Point c_p = vector_sub(p, c);
     const double norm = cross_product_norm(c_n, c_p);
-    double area = 0.5 * norm;
-    std::cout << area << std::endl;
-    return area;
+    return 0.5 * norm;
 }
 
 static double effective_area(VertexIndex current, VertexIndex previous,
@@ -139,7 +137,7 @@ void Visvalingam_Algorithm::simplify(double area_threshold,
 }
 
 
-void Visvalingam_Algorithm::simplify_ratio(uint ratio,
+void Visvalingam_Algorithm::simplify_ratio(size_t ratio,
                                     Linestring* res) const
 {
     assert(res);
