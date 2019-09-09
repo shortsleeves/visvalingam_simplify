@@ -12,7 +12,7 @@
 #include "csv.h"
 #include "heap.hpp"
 
-int process_csv(const char *filename, bool print_source, uint ratio)
+int process_csv(const char *filename, bool print_source, size_t ratio)
 {    
     Linestring shape;
     Linestring shape_simplified;
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 {
     bool print_source = false;
     const char* filename = NULL;
-    uint ratio = 50;
+    size_t ratio = 50;
     InputFormat file_format = FORMAT_OGR;
     int res = 0;
     for (int i=1; i < argc; ++i)
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--ratio") == 0 && (i+1) < argc)
         {
             ++i;
-            ratio = std::atoi(argv[i]);
+            ratio = static_cast<size_t>(std::atoi(argv[i]));
         }
         else if (strcmp(argv[i], "--dump-source") == 0)
         {
