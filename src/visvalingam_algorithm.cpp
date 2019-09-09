@@ -8,6 +8,7 @@
 #include <limits>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include "heap.hpp"
 
 static const double NEARLY_ZERO = 1e-7;
@@ -40,17 +41,25 @@ struct VertexNodeCompare
     }
 };
 
+double effective_area(const Point& c, const Point& p, const Point &n)
+{
+    const Point c_n = vector_sub(n, c);
+    const Point c_p = vector_sub(p, c);
+    const double norm = cross_product_norm(c_n, c_p);
+    double area = 0.5 * norm;
+    std::cout << area << std::endl;
+    return area;
+}
+
 static double effective_area(VertexIndex current, VertexIndex previous,
                             VertexIndex next, const Linestring& input_line)
 {
     const Point& c = input_line[current];
     const Point& p = input_line[previous];
     const Point& n = input_line[next];
-    const Point c_n = vector_sub(n, c);
-    const Point c_p = vector_sub(p, c);
-    const double norm = cross_product_norm(c_n, c_p);
-    return 0.5 * norm;
+    return effective_area(c, p, n); 
 }
+
 
 static double effective_area(const VertexNode& node,
                             const Linestring& input_line)
@@ -127,6 +136,22 @@ void Visvalingam_Algorithm::simplify(double area_threshold,
     {
         res->clear();
     }
+}
+
+
+void Visvalingam_Algorithm::simplify_ratio(uint ratio,
+                                    Linestring* res) const
+{
+    assert(res);
+    // sort by area
+    std::vector<double> ordered_area(m_effective_areas);
+    std::sort(ordered_area.begin(), ordered_area.end());
+    size_t idx = m_effective_areas.size() * ratio / 100;
+    assert(idx >= 0);
+    assert(idx < ordered_area.size());
+    double threshold = ordered_area[idx];
+    std::cout << "area threshold: " << threshold << std::endl;
+    simplify(threshold, res);
 }
 
 void Visvalingam_Algorithm::print_areas(std::ostream &stream) const

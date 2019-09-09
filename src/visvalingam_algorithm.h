@@ -15,6 +15,7 @@ public:
     Visvalingam_Algorithm(const Linestring& input);
 
     void simplify(double area_threshold, Linestring* res) const;
+    void simplify_ratio(uint ratio, Linestring* res) const;
 
     void print_areas(std::ostream &stream) const;
 
@@ -38,5 +39,7 @@ Visvalingam_Algorithm::contains_vertex(VertexIndex vertex_index,
     }
     return m_effective_areas[vertex_index] > area_threshold;
 }
+
+double effective_area(const Point& c, const Point& p, const Point &n);
 
 #endif // VISVALINGAM_ALGORITHM_H

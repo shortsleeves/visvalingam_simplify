@@ -108,8 +108,8 @@ int process_ogr(const char *filename, bool print_source)
     OGRDataSource::DestroyDataSource(datasource);
 }
 
-int process_csv(const char *filename, bool print_source)
-{
+int process_csv(const char *filename, bool print_source, uint ratio)
+{    
     Linestring shape;
     Linestring shape_simplified;
     std::ifstream is(filename);
@@ -129,7 +129,7 @@ int process_csv(const char *filename, bool print_source)
 
     std::cout << "original shape:   " << shape.size() << " points" << std::endl;
     Visvalingam_Algorithm vis_algo(shape);
-    vis_algo.simplify(0.2, &shape_simplified);
+    vis_algo.simplify_ratio(ratio, &shape_simplified);
     std::cout << "simplified shape: " << shape_simplified.size() << " points" << std::endl;
 
     std::ofstream os_pts(std::string(filename) + ".out");
@@ -138,7 +138,9 @@ int process_csv(const char *filename, bool print_source)
     }
 
     std::ofstream os_areas(std::string(filename) + ".areas");
-    vis_algo.print_areas(os_areas);
+    for (int i = 1; i < shape.size() - 1; i++) {
+        os_areas << effective_area(shape[i], shape[i-1], shape[i+1]) << "\n";
+    }
 
     return 0;
 }
@@ -152,6 +154,7 @@ int main(int argc, char **argv)
 {
     bool print_source = false;
     const char* filename = NULL;
+    uint ratio = 50;
     InputFormat file_format = FORMAT_OGR;
     int res = 0;
     for (int i=1; i < argc; ++i)
@@ -160,6 +163,11 @@ int main(int argc, char **argv)
         {
             ++i;
             filename = argv[i];
+        }
+        else if (strcmp(argv[i], "--ratio") == 0 && (i+1) < argc)
+        {
+            ++i;
+            ratio = std::atoi(argv[i]);
         }
         else if (strcmp(argv[i], "--dump-source") == 0)
         {
@@ -186,13 +194,21 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    if (ratio <= 0 || ratio >= 100)
+    {
+        std::cout << "error: bad ratio, must be between 1 and 99, got: " << ratio << std::endl;
+        return 1;
+    }
+
     switch(file_format)
     {
     case FORMAT_OGR:
+        std::cout << "processing_ogr" << std::endl;
         res = process_ogr(filename, print_source);
         break;
     case FORMAT_CSV:
-        res = process_csv(filename, print_source);
+        std::cout << "processing_csv" << std::endl;
+        res = process_csv(filename, print_source, ratio);
         break;
     }
 
