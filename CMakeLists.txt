@@ -39,4 +39,6 @@ add_test(NAME test_visvalingam COMMAND test_visvalingam)
 
 install(TARGETS simplify DESTINATION bin COMPONENT app)
 include(InstallRequiredSystemLibraries)
+include(CPack)
 add_subdirectory(cmake/bundle)
+
