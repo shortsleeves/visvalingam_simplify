@@ -12,7 +12,7 @@
 #include "csv.h"
 #include "heap.hpp"
 
-int process_csv(const char *filename, bool print_source, size_t ratio)
+int process_csv(const char *filename, bool print_source, size_t ratio, const std::vector<int> &cols)
 {    
     Linestring shape;
     Linestring shape_simplified;
@@ -22,13 +22,26 @@ int process_csv(const char *filename, bool print_source, size_t ratio)
         return 1;
     }
 
+    std::cout << "using columns: ";
+    std::copy(cols.begin(), cols.end(), std::ostream_iterator<int>(std::cout, " "));
+    std::cout << std::endl;
+
     CSVIterator iter(is);
+    int line = 1;
     while(iter != CSVIterator()) {
-        double x = std::stod((*iter)[0]);
-        double y = std::stod((*iter)[1]);
-        double z = std::stod((*iter)[2]);
-        shape.push_back(Point(x, y, z));
+        std::vector<double> coords(3, 0.0);
+        for (int col = 0; col < cols.size(); ++col) {
+            int col_id = cols[col];
+            if (col_id < (*iter).size()) {
+                coords[col] = std::stod((*iter)[col_id]);
+            } else {
+                std::cout << "error: failed to parse column " << col_id << " at line " << line << std::endl;
+                return -1;
+            }
+        }
+        shape.push_back(Point(coords[0], coords[1], coords[2]));
         iter++;
+        line++;
     }
 
     std::cout << "original shape:   " << shape.size() << " points" << std::endl;
@@ -59,6 +72,7 @@ int main(int argc, char **argv)
     bool print_source = false;
     const char* filename = NULL;
     size_t ratio = 50;
+    std::vector<int> coord_cols{0, 1, 2};
     InputFormat file_format = FORMAT_OGR;
     int res = 0;
     for (int i=1; i < argc; ++i)
@@ -72,6 +86,17 @@ int main(int argc, char **argv)
         {
             ++i;
             ratio = static_cast<size_t>(std::atoi(argv[i]));
+        }
+        else if (strcmp(argv[i], "--cols") == 0 && (i+1) < argc)
+        {
+            ++i;
+            coord_cols.clear();
+            std::string cols_arg(argv[i]);
+            std::string item;
+            std::stringstream ss(cols_arg);
+            while (std::getline(ss, item, ',')) {
+                coord_cols.push_back(std::stoi(item));
+            }
         }
         else if (strcmp(argv[i], "--dump-source") == 0)
         {
@@ -112,7 +137,7 @@ int main(int argc, char **argv)
         break;
     case FORMAT_CSV:
         std::cout << "processing_csv" << std::endl;
-        res = process_csv(filename, print_source, ratio);
+        res = process_csv(filename, print_source, ratio, coord_cols);
         break;
     }
 
