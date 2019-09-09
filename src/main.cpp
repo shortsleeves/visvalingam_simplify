@@ -12,6 +12,27 @@
 #include "csv.h"
 #include "heap.hpp"
 
+int export_filtered_csv(const char *filename, std::vector<int> idx)
+{
+    std::ofstream os_filtered(std::string(filename) + ".filtered");
+    std::ifstream is(filename);
+    if (!is.is_open()) {
+        return 1;
+    }
+
+    int lineno = 0;
+    std::string line;
+    size_t curr = 0;
+    while(std::getline(is, line)) {
+        if (idx[curr] == lineno) {
+            os_filtered << line << "\n";
+            curr++;
+        }
+        lineno++;
+    }
+    return 0;
+}
+
 int process_csv(const char *filename, bool print_source, size_t ratio, const std::vector<int> &cols)
 {    
     Linestring shape;
@@ -27,7 +48,7 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
     std::cout << std::endl;
 
     CSVIterator iter(is);
-    int line = 1;
+    int lineno = 1;
     while(iter != CSVIterator()) {
         std::vector<double> coords(3, 0.0);
         for (int col = 0; col < cols.size(); ++col) {
@@ -35,18 +56,19 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
             if (col_id < (*iter).size()) {
                 coords[col] = std::stod((*iter)[col_id]);
             } else {
-                std::cout << "error: failed to parse column " << col_id << " at line " << line << std::endl;
+                std::cout << "error: failed to parse column " << col_id << " at line " << lineno << std::endl;
                 return -1;
             }
         }
         shape.push_back(Point(coords[0], coords[1], coords[2]));
         iter++;
-        line++;
+        lineno++;
     }
 
     Visvalingam_Algorithm vis_algo(shape);
     double threshold = vis_algo.area_threshold_for_ratio(ratio);
-    vis_algo.simplify(threshold, &shape_simplified);
+    std::vector<int> idx;
+    vis_algo.simplify(threshold, &shape_simplified, &idx);
 
     std::cout << "area threshold:   " << threshold << std::endl;
     std::cout << "original shape:   " << shape.size() << " points" << std::endl;
@@ -61,6 +83,8 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
     for (int i = 1; i < shape.size() - 1; i++) {
         os_areas << effective_area(shape[i], shape[i-1], shape[i+1]) << "\n";
     }
+
+    export_filtered_csv(filename, idx);
 
     return 0;
 }

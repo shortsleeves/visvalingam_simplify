@@ -14,7 +14,7 @@ class Visvalingam_Algorithm
 public:
     Visvalingam_Algorithm(const Linestring& input);
 
-    void simplify(double area_threshold, Linestring* res) const;
+    void simplify(double area_threshold, Linestring* res, std::vector<int> *idx = nullptr) const;
     double area_threshold_for_ratio(size_t ratio) const;
 
     void print_areas(std::ostream &stream) const;

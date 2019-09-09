@@ -120,22 +120,26 @@ Visvalingam_Algorithm::Visvalingam_Algorithm(const Linestring& input)
 }
 
 void Visvalingam_Algorithm::simplify(double area_threshold,
-                                    Linestring* res) const
+                                    Linestring* res, std::vector<int> *idx) const
 {
-    assert(res);
     for (VertexIndex i=0; i < m_input_line.size(); ++i)
     {
         if (contains_vertex(i, area_threshold))
         {
             res->push_back(m_input_line[i]);
+            if (idx) {
+                idx->push_back(i);
+            }
         }
     }
     if (res->size() < 4)
     {
         res->clear();
+        if (idx) {
+            idx->clear();
+        }
     }
 }
-
 
 double Visvalingam_Algorithm::area_threshold_for_ratio(size_t ratio) const
 {
