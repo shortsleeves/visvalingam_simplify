@@ -33,10 +33,11 @@ int export_filtered_csv(const char *filename, std::vector<int> idx)
     return 0;
 }
 
-int process_csv(const char *filename, bool print_source, size_t ratio, const std::vector<int> &cols)
-{    
+int process_csv(const char *filename, bool print_source, size_t ratio, const std::vector<int> &cols, int &keep_col)
+{
     Linestring shape;
     Linestring shape_simplified;
+    std::vector<bool> keep_nodes;
     std::ifstream is(filename);
 
     if (!is.is_open()) {
@@ -49,26 +50,44 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
 
     CSVIterator iter(is);
     int lineno = 1;
+    int keepcount = 0;
+
     while(iter != CSVIterator()) {
-        std::vector<double> coords(3, 0.0);
-        for (int col = 0; col < cols.size(); ++col) {
-            int col_id = cols[col];
-            if (col_id < (*iter).size()) {
-                coords[col] = std::stod((*iter)[col_id]);
+       std::vector<double> coords(3, 0.0);
+       bool keep = false;
+
+       const CSVRow &row = *iter;
+        for (size_t col = 0; col < cols.size(); ++col) {
+            size_t col_id = cols[col];
+            if (col_id < row.size()) {
+                coords[col] = std::stod(row[col_id]);
             } else {
                 std::cout << "error: failed to parse column " << col_id << " at line " << lineno << std::endl;
                 return -1;
             }
         }
+        if (keep_col >= 0 && keep_col < row.size()) {
+            keep = std::stoi(row[keep_col]) == 0 ? false : true;
+            if (keep) {
+                keepcount++;
+            }
+        }
+
         shape.push_back(Point(coords[0], coords[1], coords[2]));
+        keep_nodes.push_back(keep);
+
         iter++;
         lineno++;
     }
+    std::cout << "number of points: " << shape.size() << std::endl;
+    std::cout << "number of lines : " << lineno - 1 << std::endl;
+    std::cout << "number of keep  : " << keepcount << std::endl;
 
+    VertexFilter keepFilter = [&keep_nodes](const VertexIndex &i) -> bool { return keep_nodes[i]; };
     Visvalingam_Algorithm vis_algo(shape);
     double threshold = vis_algo.area_threshold_for_ratio(ratio);
     std::vector<int> idx;
-    vis_algo.simplify(threshold, &shape_simplified, &idx);
+    vis_algo.simplify(threshold, &shape_simplified, &idx, keepFilter);
 
     std::cout << "area threshold:   " << threshold << std::endl;
     std::cout << "original shape:   " << shape.size() << " points" << std::endl;
@@ -99,6 +118,7 @@ int main(int argc, char **argv)
     bool print_source = false;
     const char* filename = NULL;
     size_t ratio = 50;
+    int filter_col = -1;
     std::vector<int> coord_cols{0, 1, 2};
     InputFormat file_format = FORMAT_OGR;
     int res = 0;
@@ -113,6 +133,11 @@ int main(int argc, char **argv)
         {
             ++i;
             ratio = static_cast<size_t>(std::atoi(argv[i]));
+        }
+        else if (strcmp(argv[i], "--filter-col") == 0 && (i+1) < argc)
+        {
+            ++i;
+            filter_col = static_cast<size_t>(std::atoi(argv[i]));
         }
         else if (strcmp(argv[i], "--cols") == 0 && (i+1) < argc)
         {
@@ -164,7 +189,7 @@ int main(int argc, char **argv)
         break;
     case FORMAT_CSV:
         std::cout << "processing_csv" << std::endl;
-        res = process_csv(filename, print_source, ratio, coord_cols);
+        res = process_csv(filename, print_source, ratio, coord_cols, filter_col);
         break;
     }
 

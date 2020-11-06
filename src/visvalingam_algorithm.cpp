@@ -119,37 +119,63 @@ Visvalingam_Algorithm::Visvalingam_Algorithm(const Linestring& input)
     node_list.clear();
 }
 
+void Visvalingam_Algorithm::simplify(double area_threshold, Linestring *res) const
+{
+   simplify(area_threshold, res, nullptr);
+}
+
 void Visvalingam_Algorithm::simplify(double area_threshold,
                                     Linestring* res, std::vector<int> *idx) const
 {
-    for (VertexIndex i=0; i < m_input_line.size(); ++i)
-    {
-        if (contains_vertex(i, area_threshold))
-        {
-            res->push_back(m_input_line[i]);
-            if (idx) {
-                idx->push_back(i);
-            }
-        }
-    }
-    if (res->size() < 4)
-    {
-        res->clear();
-        if (idx) {
-            idx->clear();
-        }
-    }
+   simplify(area_threshold, res, idx, [](const VertexIndex &i){ return false; });
+}
+
+void Visvalingam_Algorithm::simplify(double area_threshold,
+                                     Linestring *res, std::vector<int> *idx,
+                                     VertexFilter fn) const
+{
+   for (VertexIndex i=0; i < m_input_line.size(); ++i)
+   {
+       if (fn(i) || contains_vertex(i, area_threshold))
+       {
+           res->push_back(m_input_line[i]);
+           if (idx) {
+               idx->push_back(i);
+           }
+       }
+   }
+   if (res->size() < 4)
+   {
+       res->clear();
+       if (idx) {
+           idx->clear();
+       }
+   }
 }
 
 double Visvalingam_Algorithm::area_threshold_for_ratio(size_t ratio) const
 {
-    // sort by area
-    std::vector<double> ordered_area(m_effective_areas);
-    std::sort(ordered_area.begin(), ordered_area.end());
-    size_t idx = m_effective_areas.size() * ratio / 100;
-    assert(idx >= 0);
-    assert(idx < ordered_area.size());
-    return ordered_area[idx];
+   return area_threshold_for_ratio(ratio, [](const VertexIndex &i){ return false; });
+}
+
+double Visvalingam_Algorithm::area_threshold_for_ratio(size_t ratio, VertexFilter fn) const
+{
+   // sort by area
+   std::vector<double> ordered_area;
+   ordered_area.reserve(m_effective_areas.size());
+
+   // remove area that we know we will keep
+   for (VertexIndex i = 0; i < m_effective_areas.size(); i++) {
+      if (fn(i) == false) {
+          ordered_area.push_back(m_effective_areas.at(i));
+      }
+   }
+
+   std::sort(ordered_area.begin(), ordered_area.end());
+   size_t idx = ordered_area.size() * ratio / 100;
+   assert(idx >= 0);
+   assert(idx < ordered_area.size());
+   return ordered_area[idx];
 }
 
 void Visvalingam_Algorithm::print_areas(std::ostream &stream) const

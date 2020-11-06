@@ -7,15 +7,22 @@
 
 #include <vector>
 #include <cassert>
+#include <functional>
 #include "polyline.h"
+
+typedef std::function<bool (const VertexIndex)> VertexFilter;
 
 class Visvalingam_Algorithm
 {
 public:
+
     Visvalingam_Algorithm(const Linestring& input);
 
-    void simplify(double area_threshold, Linestring* res, std::vector<int> *idx = nullptr) const;
+    void simplify(double area_threshold, Linestring* res) const;
+    void simplify(double area_threshold, Linestring* res, std::vector<int> *idx) const;
+    void simplify(double area_threshold, Linestring* res, std::vector<int> *idx, VertexFilter fn) const;
     double area_threshold_for_ratio(size_t ratio) const;
+    double area_threshold_for_ratio(size_t ratio, VertexFilter fn) const;
 
     void print_areas(std::ostream &stream) const;
 
