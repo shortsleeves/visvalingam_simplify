@@ -76,11 +76,8 @@ Visvalingam_Algorithm::Visvalingam_Algorithm(const Linestring& input)
     for (VertexIndex i=1; i < input.size()-1; ++i)
     {
         double area = effective_area(i, i-1, i+1, input);
-        if (area > NEARLY_ZERO)
-        {
-            node_list[i] = new VertexNode(i, i-1, i+1, area);
-            min_heap.insert(node_list[i]);
-        }
+        node_list[i] = new VertexNode(i, i-1, i+1, area);
+        min_heap.insert(node_list[i]);
     }
 
     double min_area = -std::numeric_limits<double>::max();
