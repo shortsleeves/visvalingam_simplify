@@ -4,6 +4,9 @@ C++ implementation of: _Line Generalisation by Repeated Elimination of the Small
     make
     bin/simplify --file data/ne_10m_admin_0_countries.shp
 
+    # CSV version
+        simplify  --file testcurve_cone_force_mini_filter.csv --cols 1,2,3 --filter-col 5 --format=csv
+
 ## Sample data
 Source data used: Natural Earth Data: http://www.naturalearthdata.com/downloads/10m-cultural-vectors/
 
