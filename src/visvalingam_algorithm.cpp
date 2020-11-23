@@ -135,17 +135,13 @@ void Visvalingam_Algorithm::simplify(double area_threshold,
    {
        if (fn(i) || contains_vertex(i, area_threshold))
        {
-           res->push_back(m_input_line[i]);
-           if (idx) {
-               idx->push_back(i);
+           const Point &v = m_input_line.at(i);
+           if (res) {
+              res->push_back(v);
            }
-       }
-   }
-   if (res->size() < 4)
-   {
-       res->clear();
-       if (idx) {
-           idx->clear();
+           if (idx) {
+              idx->push_back(v.id);
+           }
        }
    }
 }
@@ -170,6 +166,7 @@ double Visvalingam_Algorithm::area_threshold_for_ratio(size_t ratio, VertexFilte
 
    std::sort(ordered_area.begin(), ordered_area.end());
    size_t idx = ordered_area.size() * ratio / 100;
+
    assert(idx >= 0);
    assert(idx < ordered_area.size());
    return ordered_area[idx];
@@ -181,6 +178,16 @@ void Visvalingam_Algorithm::print_areas(std::ostream &stream) const
     {
         stream << i << ": " << m_effective_areas[i] << "\n";
     }
+}
+
+double Visvalingam_Algorithm::get_area_min()
+{
+   return *std::min_element(m_effective_areas.begin(), m_effective_areas.end());
+}
+
+double Visvalingam_Algorithm::get_area_max()
+{
+   return *std::max_element(m_effective_areas.begin(), m_effective_areas.end());
 }
 
 void run_visvalingam(const Linestring &shape, Linestring *res)

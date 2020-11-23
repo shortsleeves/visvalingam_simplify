@@ -23,6 +23,8 @@ public:
     void simplify(double area_threshold, Linestring* res, std::vector<int> *idx, VertexFilter fn) const;
     double area_threshold_for_ratio(size_t ratio) const;
     double area_threshold_for_ratio(size_t ratio, VertexFilter fn) const;
+    double get_area_min();
+    double get_area_max();
 
     void print_areas(std::ostream &stream) const;
 
@@ -35,7 +37,7 @@ private:
 
 inline bool
 Visvalingam_Algorithm::contains_vertex(VertexIndex vertex_index,
-                                        double area_threshold) const
+                                       double area_threshold) const
 {
     assert(vertex_index < m_effective_areas.size());
     assert(m_effective_areas.size() != 0);

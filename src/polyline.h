@@ -8,13 +8,14 @@ typedef size_t VertexIndex;
 
 struct Point
 {
-    Point() : X(0.0), Y(0.0), Z(0.0) {}
-    Point(double inX, double inY) : X(inX), Y(inY), Z(0.0) {}
-    Point(double inX, double inY, double inZ) : X(inX), Y(inY), Z(inZ) {}
+    Point() : id(0), X(0.0), Y(0.0), Z(0.0) {}
+    Point(double inX, double inY, double inZ = 0.0, int idx = 0) : id(idx), X(inX), Y(inY), Z(inZ) {}
 
+    int id;
     double X;
     double Y;
     double Z;
+
 };
 typedef std::vector<Point> Linestring;
 typedef std::vector<Linestring> MultiLinestring;

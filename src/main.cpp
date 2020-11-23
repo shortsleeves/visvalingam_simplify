@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 #include "visvalingam_algorithm.h"
 #include "ogr.h"
 #include "csv.h"
@@ -33,11 +34,12 @@ int export_filtered_csv(const char *filename, std::vector<int> idx)
     return 0;
 }
 
-int process_csv(const char *filename, bool print_source, size_t ratio, const std::vector<int> &cols, int &keep_col)
+int process_csv(const char *filename, bool print_source, size_t ratio, const std::vector<int> &cols, const int &keep_col, const int &group_col)
 {
     Linestring shape;
     Linestring shape_simplified;
     std::vector<bool> keep_nodes;
+    std::unordered_map<int, std::vector<int>> groups; // group to nodes
     std::ifstream is(filename);
 
     if (!is.is_open()) {
@@ -49,12 +51,13 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
     std::cout << std::endl;
 
     CSVIterator iter(is);
-    int lineno = 1;
+    int nodeid = 0;
     int keepcount = 0;
 
     while(iter != CSVIterator()) {
        std::vector<double> coords(3, 0.0);
        bool keep = false;
+       int group = 0;
 
        const CSVRow &row = *iter;
         for (size_t col = 0; col < cols.size(); ++col) {
@@ -62,7 +65,7 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
             if (col_id < row.size()) {
                 coords[col] = std::stod(row[col_id]);
             } else {
-                std::cout << "error: failed to parse column " << col_id << " at line " << lineno << std::endl;
+                std::cout << "error: failed to parse column " << col_id << " at line " << nodeid + 1 << std::endl;
                 return -1;
             }
         }
@@ -72,26 +75,64 @@ int process_csv(const char *filename, bool print_source, size_t ratio, const std
                 keepcount++;
             }
         }
+        if (group_col >= 0 && group_col < row.size()) {
+            group = std::stoi(row[group_col]);
+        }
 
-        shape.push_back(Point(coords[0], coords[1], coords[2]));
+        shape.push_back(Point(coords[0], coords[1], coords[2], nodeid));
         keep_nodes.push_back(keep);
+        groups[group].push_back(nodeid);
 
         iter++;
-        lineno++;
+        nodeid++;
     }
+
+
     std::cout << "number of points: " << shape.size() << std::endl;
-    std::cout << "number of lines : " << lineno - 1 << std::endl;
+    std::cout << "number of lines : " << nodeid << std::endl;
     std::cout << "number of keep  : " << keepcount << std::endl;
 
-    VertexFilter keepFilter = [&keep_nodes](const VertexIndex &i) -> bool { return keep_nodes[i]; };
-    Visvalingam_Algorithm vis_algo(shape);
-    double threshold = vis_algo.area_threshold_for_ratio(ratio);
     std::vector<int> idx;
-    vis_algo.simplify(threshold, &shape_simplified, &idx, keepFilter);
+    VertexFilter keepFilter = [&keep_nodes](const VertexIndex &i) -> bool { return keep_nodes[i]; };
+    for (const auto &group: groups) {
+       std::cout << "processing group " << group.first << std::endl;
 
-    std::cout << "area threshold:   " << threshold << std::endl;
-    std::cout << "original shape:   " << shape.size() << " points" << std::endl;
-    std::cout << "simplified shape: " << shape_simplified.size() << " points" << std::endl;
+       // HACK: do not simplify the -1 group, the nodes are not contiguous.
+       if (group.first == -1) {
+          continue;
+       }
+
+       // create a subshape
+       Linestring subshape;
+       for (const auto &id : group.second) {
+           subshape.push_back(shape.at(id));
+       }
+
+       Visvalingam_Algorithm vis_algo(subshape);
+       double threshold = vis_algo.area_threshold_for_ratio(ratio);
+
+       std::cout << "area threshold:   " << threshold << std::endl;
+       vis_algo.simplify(threshold, nullptr, &idx, keepFilter);
+    }
+
+    // Keep all nodes from the group -1
+    std::unordered_map<int,std::vector<int>>::iterator it = groups.find(-1);
+    if (it != groups.end()) {
+       for (const auto &id : it->second) {
+          idx.push_back(id);
+       }
+    }
+
+    // make sure the points are contiguous
+    std::sort(idx.begin(), idx.end());
+
+    // create simplified shape
+    for (const auto &i : idx) {
+        shape_simplified.push_back(shape.at(i));
+    }
+
+    std::cout << "original shape  :   " << shape.size() << " points" << std::endl;
+    std::cout << "idx size        :   " << idx.size() << std::endl;
 
     std::ofstream os_pts(std::string(filename) + ".out");
     for (const Point &p : shape_simplified) {
@@ -119,6 +160,7 @@ int main(int argc, char **argv)
     const char* filename = NULL;
     size_t ratio = 50;
     int filter_col = -1;
+    int group_col = -1;
     std::vector<int> coord_cols{0, 1, 2};
     InputFormat file_format = FORMAT_OGR;
     int res = 0;
@@ -149,6 +191,11 @@ int main(int argc, char **argv)
             while (std::getline(ss, item, ',')) {
                 coord_cols.push_back(std::stoi(item));
             }
+        }
+        else if (strcmp(argv[i], "--group-col") == 0 && (i+1) < argc)
+        {
+            ++i;
+            group_col = static_cast<size_t>(std::atoi(argv[i]));
         }
         else if (strcmp(argv[i], "--dump-source") == 0)
         {
@@ -189,7 +236,7 @@ int main(int argc, char **argv)
         break;
     case FORMAT_CSV:
         std::cout << "processing_csv" << std::endl;
-        res = process_csv(filename, print_source, ratio, coord_cols, filter_col);
+        res = process_csv(filename, print_source, ratio, coord_cols, filter_col, group_col);
         break;
     }
 
