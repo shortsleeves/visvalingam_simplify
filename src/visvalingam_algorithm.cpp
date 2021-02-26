@@ -8,6 +8,7 @@
 #include <limits>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include "heap.hpp"
 
 static const double NEARLY_ZERO = 1e-7;
@@ -40,17 +41,23 @@ struct VertexNodeCompare
     }
 };
 
+double effective_area(const Point& c, const Point& p, const Point &n)
+{
+    const Point c_n = vector_sub(n, c);
+    const Point c_p = vector_sub(p, c);
+    const double norm = cross_product_norm(c_n, c_p);
+    return 0.5 * norm;
+}
+
 static double effective_area(VertexIndex current, VertexIndex previous,
                             VertexIndex next, const Linestring& input_line)
 {
     const Point& c = input_line[current];
     const Point& p = input_line[previous];
     const Point& n = input_line[next];
-    const Point c_n = vector_sub(n, c);
-    const Point c_p = vector_sub(p, c);
-    const double det = cross_product(c_n, c_p);
-    return 0.5 * fabs(det);
+    return effective_area(c, p, n); 
 }
+
 
 static double effective_area(const VertexNode& node,
                             const Linestring& input_line)
@@ -69,11 +76,8 @@ Visvalingam_Algorithm::Visvalingam_Algorithm(const Linestring& input)
     for (VertexIndex i=1; i < input.size()-1; ++i)
     {
         double area = effective_area(i, i-1, i+1, input);
-        if (area > NEARLY_ZERO)
-        {
-            node_list[i] = new VertexNode(i, i-1, i+1, area);
-            min_heap.insert(node_list[i]);
-        }
+        node_list[i] = new VertexNode(i, i-1, i+1, area);
+        min_heap.insert(node_list[i]);
     }
 
     double min_area = -std::numeric_limits<double>::max();
@@ -112,28 +116,98 @@ Visvalingam_Algorithm::Visvalingam_Algorithm(const Linestring& input)
     node_list.clear();
 }
 
-void Visvalingam_Algorithm::simplify(double area_threshold,
-                                    Linestring* res) const
+void Visvalingam_Algorithm::simplify(double area_threshold, Linestring *res) const
 {
-    assert(res);
-    for (VertexIndex i=0; i < m_input_line.size(); ++i)
-    {
-        if (contains_vertex(i, area_threshold))
-        {
-            res->push_back(m_input_line[i]);
-        }
-    }
-    if (res->size() < 4)
-    {
-        res->clear();
-    }
+   simplify(area_threshold, res, nullptr);
 }
 
-void Visvalingam_Algorithm::print_areas() const
+void Visvalingam_Algorithm::simplify(double area_threshold,
+                                    Linestring* res, std::vector<int> *idx) const
+{
+   simplify(area_threshold, res, idx, [](const VertexIndex &i){ return false; });
+}
+
+void Visvalingam_Algorithm::simplify(double area_threshold,
+                                     Linestring *res, std::vector<int> *idx,
+                                     VertexFilter fn) const
+{
+   for (VertexIndex i=0; i < m_input_line.size(); ++i)
+   {
+       if (fn(i) || contains_vertex(i, area_threshold))
+       {
+           const Point &v = m_input_line.at(i);
+           if (res) {
+              res->push_back(v);
+           }
+           if (idx) {
+              idx->push_back(v.id);
+           }
+       }
+   }
+}
+
+double Visvalingam_Algorithm::area_threshold_for_ratio(size_t ratio) const
+{
+   return area_threshold_for_ratio(ratio, [](const VertexIndex &i){ return false; });
+}
+
+double Visvalingam_Algorithm::area_threshold_for_ratio(size_t ratio, VertexFilter fn) const
+{
+   // sort by area
+   std::vector<double> ordered_area;
+   ordered_area.reserve(m_effective_areas.size());
+
+   // remove area that we know we will keep
+   for (VertexIndex i = 0; i < m_effective_areas.size(); i++) {
+      if (fn(i) == false) {
+          ordered_area.push_back(m_effective_areas.at(i));
+      }
+   }
+
+   std::sort(ordered_area.begin(), ordered_area.end());
+   size_t idx = ordered_area.size() * ratio / 100;
+
+   assert(idx >= 0);
+   assert(idx < ordered_area.size());
+   return ordered_area[idx];
+}
+
+void Visvalingam_Algorithm::print_areas(std::ostream &stream) const
 {
     for (VertexIndex i=0; i < m_effective_areas.size(); ++i)
     {
-        std::cout << i << ": " << m_effective_areas[i] << std::endl;
+        stream << i << ": " << m_effective_areas[i] << "\n";
     }
 }
 
+double Visvalingam_Algorithm::get_area_min()
+{
+   return *std::min_element(m_effective_areas.begin(), m_effective_areas.end());
+}
+
+double Visvalingam_Algorithm::get_area_max()
+{
+   return *std::max_element(m_effective_areas.begin(), m_effective_areas.end());
+}
+
+void run_visvalingam(const Linestring &shape, Linestring *res)
+{
+    Visvalingam_Algorithm vis_algo(shape);
+    Linestring simplified_linestring;
+    vis_algo.simplify(0.002, res);
+}
+
+void run_visvalingam(const MultiPolygon &shape, MultiPolygon &res)
+{
+    for (size_t i = 0; i < shape.size(); ++i)
+    {
+        const Polygon& poly = shape[i];
+        res.push_back(Polygon());
+        run_visvalingam(poly.exterior_ring, &res.back().exterior_ring);
+        for (size_t j = 0; j < poly.interior_rings.size(); ++j)
+        {
+            res.back().interior_rings.push_back(Linestring());
+            run_visvalingam(poly.interior_rings[j], &res.back().interior_rings.back());
+        }
+    }
+}

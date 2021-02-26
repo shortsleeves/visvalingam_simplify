@@ -1,5 +1,5 @@
 CC=clang++
-CFLAGS=-Wall -std=c++11 -g -I/usr/local/include
+CFLAGS=-Wall -std=c++11 -g -I/usr/local/include -I/usr/include/gdal
 LDFLAGS=-lgdal -L/usr/local/lib
 SOURCE_DIR=src/
 SOURCES=$(SOURCE_DIR)main.cpp $(SOURCE_DIR)visvalingam_algorithm.cpp $(SOURCE_DIR)geo_types.cpp
